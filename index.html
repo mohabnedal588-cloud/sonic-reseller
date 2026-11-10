@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SONIC XIT - Member Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #060608; --primary-blue: #007BFF; --primary-glow: #00A3FF;
+            --text-main: #FFFFFF; --text-muted: #8E95A3; --success: #00FF66;
+            --danger: #FF3B30; --input-bg: #161A22; --border-color: #252A35;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; user-select: none; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; position: relative; }
+        .bg-glow { position: absolute; top: 50%; left: 50%; width: 400px; height: 400px; background: var(--primary-blue); filter: blur(150px); opacity: 0.1; transform: translate(-50%, -50%); z-index: -1; pointer-events: none; transition: opacity 0.5s ease; }
+        .container { width: 100%; max-width: 420px; padding: 20px; position: relative; z-index: 10; }
+
+        .screen { display: none; flex-direction: column; align-items: center; animation: fadeIn 0.5s ease; width: 100%; }
+        .screen.active { display: flex; }
+
+        .logo-container { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+        .logo-text { font-family: 'Orbitron', sans-serif; font-size: 48px; font-weight: 900; font-style: italic; letter-spacing: 2px; text-shadow: 0 0 15px rgba(255, 255, 255, 0.2); }
+        .logo-text .xit { color: var(--primary-glow); text-shadow: 0 0 25px var(--primary-glow); }
+        .premium-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(0, 123, 255, 0.1); border: 1px solid rgba(0, 163, 255, 0.3); color: var(--primary-glow); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 20px; letter-spacing: 1px; }
+        .divider { width: 60px; height: 3px; background-color: var(--primary-blue); margin: 0 auto 20px auto; border-radius: 2px; box-shadow: 0 0 10px var(--primary-blue); }
+        .subtitle { color: var(--text-muted); font-size: 15px; margin-bottom: 20px; }
+
+        .input-group { position: relative; width: 100%; margin-bottom: 15px; }
+        .input-field { width: 100%; background-color: var(--input-bg); border: 1px solid var(--border-color); color: #fff; padding: 14px 15px; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.3s ease; text-align: right; }
+        .input-field:focus { border-color: var(--primary-blue); box-shadow: 0 0 20px rgba(0, 123, 255, 0.15); }
+        
+        .submit-btn { width: 100%; background: linear-gradient(90deg, #0056b3, #00A3FF); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(0, 123, 255, 0.3); margin-bottom: 15px; }
+        .submit-btn:hover { box-shadow: 0 0 30px rgba(0, 163, 255, 0.6); transform: translateY(-2px); }
+        .submit-btn:disabled { background: #333; box-shadow: none; cursor: not-allowed; }
+
+        #dashboard-screen { display: none; flex-direction: column; align-items: center; animation: slideUp 0.5s ease; }
+        .status-msg { width: 100%; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; margin-bottom: 20px; }
+        .status-success { background: rgba(0, 255, 102, 0.1); border: 1px solid rgba(0, 255, 102, 0.3); color: var(--success); }
+        .status-expired { background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.3); color: var(--danger); animation: pulse 2s infinite; }
+        .radar-container { position: relative; width: 130px; height: 130px; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; }
+        .radar-circle { position: absolute; width: 100%; height: 100%; border: 2px dashed rgba(0, 163, 255, 0.5); border-radius: 50%; animation: rotate 10s linear infinite; }
+        .radar-inner { width: 100px; height: 100px; background: radial-gradient(circle, rgba(0, 163, 255, 0.15) 0%, transparent 70%); border: 2px solid var(--primary-blue); border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: inset 0 0 20px rgba(0, 163, 255, 0.3), 0 0 20px rgba(0, 163, 255, 0.2); position: relative; z-index: 2; }
+        .radar-inner .brand { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 13px; font-style: italic; }
+        .radar-inner .brand span { color: var(--primary-glow); }
+        .radar-inner .sub { font-family: 'Orbitron', sans-serif; font-size: 7px; color: var(--primary-glow); letter-spacing: 1px; }
+        .timer { font-family: 'Orbitron', sans-serif; font-size: 30px; font-weight: 700; color: #fff; letter-spacing: 2px; margin-bottom: 5px; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .timer.expired { color: var(--danger); text-shadow: 0 0 10px var(--danger); }
+        .timer-label { color: var(--text-muted); font-size: 12px; margin-bottom: 20px; }
+        .key-box { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .key-box .title { color: var(--text-muted); font-size: 12px; margin-bottom: 5px; }
+        .key-box .value { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 15px; color: #fff; letter-spacing: 1px; }
+        .stats-grid { display: flex; width: 100%; gap: 10px; margin-bottom: 20px; }
+        .stat-card { flex: 1; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 5px; text-align: center; }
+        .stat-card .label { color: var(--text-muted); font-size: 11px; margin-bottom: 5px; }
+        .stat-card .val { font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700; color: #fff; }
+        .inject-btn { width: 100%; background: #fff; color: #000; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; display: flex; justify-content: center; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 20px; transition: 0.2s; }
+        .inject-btn:hover { background: #e0e0e0; }
+        .inject-btn:disabled { background: #333; color: #888; cursor: not-allowed; }
+        .bottom-nav { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 15px; display: flex; padding: 10px 0; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); cursor: pointer; font-size: 12px; gap: 5px; transition: 0.3s; }
+        .nav-item.active { color: var(--primary-glow); }
+
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--primary-blue); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 100; }
+
+        @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="bg-glow" id="bg-glow"></div>
+    <div id="toast">تم!</div>
+
+    <div class="container">
+        <!-- شاشة الدخول للمستخدم -->
+        <div id="login-screen" class="screen active">
+            <div class="logo-container"><div class="logo-text">SONIC <span class="xit">XIT</span></div></div>
+            <div class="premium-badge">MEMBER LOGIN</div>
+            <div class="divider"></div>
+            <p class="subtitle">أدخل بياناتك للدخول</p>
+            
+            <div class="input-group">
+                <input type="text" id="login-user" class="input-field" placeholder="اسم المستخدم" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <input type="password" id="login-pass" class="input-field" placeholder="كلمة المرور">
+            </div>
+            
+            <button class="submit-btn" id="login-btn" onclick="loginUser()">تسجيل الدخول</button>
+        </div>
+
+        <!-- لوحة المستخدم بعد الدخول -->
+        <div id="dashboard-screen" class="screen">
+            <div id="status-message" class="status-msg status-success">✔️ أهلاً بك</div>
+            <div class="radar-container">
+                <div class="radar-circle"></div>
+                <div class="radar-inner"><div class="brand">SONIC <span>XIT</span></div><div class="sub">CLIENT</div></div>
+            </div>
+            <div class="timer" id="countdown">00:00:00</div>
+            <div class="timer-label" id="timer-label">الوقت المتبقي</div>
+            <div class="key-box">
+                <div><div class="title">الحساب</div><div class="value" id="display-user" dir="ltr">...</div></div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="label">الجهاز</div><div class="val">web • web</div></div>
+                <div class="stat-card"><div class="label">الانتهاء</div><div class="val" id="expiry-date">...</div></div>
+                <div class="stat-card"><div class="label">التفعيل</div><div class="val" id="activation-date">...</div></div>
+            </div>
+            <button class="inject-btn" id="inject-btn" onclick="injectAction()"><span class="plus-icon">+</span> Inject</button>
+            <div class="bottom-nav">
+                <div class="nav-item active"><span class="icon">🏠</span><span>الرئيسية</span></div>
+                <div class="nav-item" onclick="logoutUser()"><span class="icon">🚪</span><span>خروج</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BIN_ID = "6af38208ffd5d16053b7be3b";
+        const API_KEY = "$2a$10$hwehRSCL5qz8WnzrHvHiAup6Xqjpv15c1vwCl0QxHxyCNaq90TrO.";
+        const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+        async function fetchDB() {
+            try {
+                const response = await fetch(`${API_URL}/latest`, { headers: { 'X-Master-Key': API_KEY } });
+                if (!response.ok) throw new Error("فشل الاتصال");
+                const data = await response.json();
+                return (data.record && typeof data.record === 'object') ? data.record : { users: {} };
+            } catch (e) {
+                showToast("⚠️ فشل الاتصال بالسحابة!");
+                return { users: {} };
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(-50%) translateY(20px)'; }, 3000);
+        }
+
+        window.switchScreen = function(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if(screenId === 'login-screen') document.getElementById('bg-glow').style.opacity = '0.1';
+        };
+
+        window.loginUser = async function() {
+            const user = document.getElementById('login-user').value.trim().replace(/\s+/g, '');
+            const pass = document.getElementById('login-pass').value.trim().replace(/\s+/g, '');
+
+            if (!user || !pass) { showToast("أدخل البيانات!"); return; }
+
+            const btn = document.getElementById('login-btn');
+            btn.innerText = "جاري التحقق...";
+
+            const db = await fetchDB();
+            
+            if (!db.users || !db.users[user]) {
+                showToast("الحساب غير موجود! تأكد من الاسم.");
+                btn.innerText = "تسجيل الدخول";
+                return;
+            }
+
+            if (db.users[user].password !== pass) {
+                showToast("كلمة المرور خاطئة!");
+                btn.innerText = "تسجيل الدخول";
+                return;
+            }
+
+            btn.innerText = "تسجيل الدخول";
+            switchScreen('dashboard-screen');
+            document.getElementById('bg-glow').style.opacity = '0.2';
+            
+            document.getElementById('display-user').innerText = user;
+            const userData = db.users[user];
+            const expiry = userData.expiryDate;
+            const now = Date.now();
+            
+            if (now >= expiry) {
+                document.getElementById('status-message').innerText = "⚠️ اشتراكك منتهي. يرجى التجديد.";
+                document.getElementById('status-message').className = "status-msg status-expired";
+                document.getElementById('countdown').innerText = "00:00:00";
+                document.getElementById('countdown').classList.add('expired');
+                document.getElementById('timer-label').innerText = "انتهت الصلاحية";
+                document.getElementById('inject-btn').disabled = true;
+                document.getElementById('inject-btn').innerHTML = `<span>🔒</span> منتهي`;
+            } else {
+                document.getElementById('status-message').innerText = "✔️ حسابك نشط";
+                document.getElementById('status-message').className = "status-msg status-success";
+                document.getElementById('countdown').classList.remove('expired');
+                document.getElementById('inject-btn').disabled = false;
+                document.getElementById('inject-btn').innerHTML = `<span class="plus-icon">+</span> Inject`;
+                startTimer(expiry);
+            }
+
+            const formatDate = (ts) => {
+                const d = new Date(ts);
+                return `${d.getDate()} ${d.toLocaleString('ar-EG', { month: 'long' })} ${d.getFullYear()}`;
+            };
+            document.getElementById('activation-date').innerText = userData.activationDate ? formatDate(userData.activationDate) : "غير محدد";
+            document.getElementById('expiry-date').innerText = formatDate(expiry);
+        };
+
+        window.logoutUser = function() {
+            if(window.countdownInterval) clearInterval(window.countdownInterval);
+            switchScreen('login-screen');
+            document.getElementById('login-pass').value = "";
+        };
+
+        window.injectAction = function() {
+            const btn = document.getElementById('inject-btn');
+            if(btn.disabled) return;
+            btn.innerHTML = `<span class="plus-icon">⏳</span> جاري الحقن...`;
+            setTimeout(() => {
+                btn.innerHTML = `<span class="plus-icon">✔️</span> تم الحقن بنجاح`;
+                showToast("تم فتح تطبيق Happ VPN");
+                setTimeout(() => { if(!btn.disabled) btn.innerHTML = `<span class="plus-icon">+</span> Inject`; }, 3000);
+            }, 1500);
+        };
+
+        function startTimer(expiryTimestamp) {
+            const timerElement = document.getElementById('countdown');
+            if(window.countdownInterval) clearInterval(window.countdownInterval);
+            const updateTimer = () => {
+                const timeLeft = expiryTimestamp - Date.now();
+                if (timeLeft <= 0) {
+                    clearInterval(window.countdownInterval);
+                    timerElement.innerText = "00:00:00";
+                    timerElement.classList.add('expired');
+                    document.getElementById('timer-label').innerText = "انتهت الصلاحية";
+                    document.getElementById('status-message').innerText = "⚠️ انتهى اشتراكك.";
+                    document.getElementById('status-message').className = "status-msg status-expired";
+                    document.getElementById('inject-btn').disabled = true;
+                    document.getElementById('inject-btn').innerHTML = `<span>🔒</span> منتهي`;
+                    return;
+                }
+                const d = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const h = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+                const m = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                const s = Math.floor((timeLeft % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                timerElement.innerText = `${d > 0 ? d + 'ي ' : ''}${h}:${m}:${s}`;
+            };
+            updateTimer();
+            window.countdownInterval = setInterval(updateTimer, 1000);
+        }
+    </script>
+</body>
+</html>

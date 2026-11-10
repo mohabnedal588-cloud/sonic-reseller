@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SONIC XIT - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #060608; --panel-bg: #101216; --primary-glow: #00A3FF;
+            --text-main: #FFFFFF; --text-muted: #8E95A3; --success: #00FF66;
+            --danger: #FF3B30; --input-bg: #161A22; --border-color: #252A35;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; user-select: none; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-y: auto; position: relative; padding: 20px; }
+        .container { width: 100%; max-width: 500px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 30px; box-shadow: 0 0 50px rgba(0, 163, 255, 0.1); }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h2 { font-family: 'Orbitron', sans-serif; font-size: 28px; color: var(--primary-glow); margin-bottom: 5px; }
+        .header p { color: var(--text-muted); font-size: 14px; }
+        
+        .panel { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        .panel h3 { font-size: 16px; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        
+        .inputs { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
+        .inputs input, .inputs select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: #fff; font-family: 'Cairo'; font-size: 14px; outline: none; }
+        .inputs input:focus, .inputs select:focus { border-color: var(--primary-glow); }
+        
+        .btn { width: 100%; background: var(--primary-glow); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .btn:hover { background: #fff; }
+        .btn-logout { background: rgba(255, 59, 48, 0.1); color: var(--danger); border: 1px solid rgba(255, 59, 48, 0.3); margin-top: 10px; }
+        .btn-logout:hover { background: rgba(255, 59, 48, 0.2); color: var(--danger); }
+
+        .users-list { max-height: 300px; overflow-y: auto; }
+        .user-item { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .user-info { display: flex; justify-content: space-between; align-items: center; }
+        .username { font-weight: bold; color: var(--primary-glow); font-size: 15px; }
+        .user-pass { color: var(--text-muted); font-family: 'Orbitron'; font-size: 13px; }
+        .user-expiry { font-size: 12px; color: var(--text-muted); }
+        .user-expiry span { color: var(--danger); font-weight: bold; }
+        
+        .actions { display: flex; gap: 8px; }
+        .actions button { flex: 1; padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; font-family: 'Cairo'; }
+        .btn-add { background: rgba(0, 255, 102, 0.15); color: var(--success); }
+        .btn-remove { background: rgba(255, 59, 48, 0.15); color: var(--danger); }
+
+        /* شاشة تسجيل الدخول للموزع */
+        #login-panel { display: block; text-align: center; }
+        #admin-panel { display: none; }
+        
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--primary-glow); color: #000; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">تم!</div>
+
+    <div class="container">
+        <!-- شاشة دخول الموزع -->
+        <div id="login-panel">
+            <div class="header">
+                <h2>SONIC XIT</h2>
+                <p>بوابة الموزع الخاصة</p>
+            </div>
+            <div class="panel">
+                <h3>🔐 تسجيل الدخول</h3>
+                <div class="inputs">
+                    <input type="password" id="admin-pass" placeholder="أدخل كلمة مرور الموزع">
+                </div>
+                <button class="btn" onclick="loginAdmin()">دخول لوحة التحكم</button>
+            </div>
+        </div>
+
+        <!-- لوحة التحكم -->
+        <div id="admin-panel">
+            <div class="header">
+                <h2>SONIC XIT</h2>
+                <p>لوحة إدارة الحسابات</p>
+            </div>
+            
+            <div class="panel">
+                <h3>➕ إضافة عضو جديد</h3>
+                <div class="inputs">
+                    <input type="text" id="new-username" placeholder="اسم المستخدم (مثال: Sonic)">
+                    <input type="text" id="new-userpass" placeholder="كلمة المرور (مثال: 123456)">
+                    <select id="new-userdays">
+                        <option value="1">1 يوم</option>
+                        <option value="3">3 أيام</option>
+                        <option value="7">7 أيام</option>
+                        <option value="30" selected>30 يوم</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="createNewUser()">إنشاء الحساب الآن</button>
+            </div>
+
+            <div class="panel">
+                <h3>👥 الأعضاء المسجلين</h3>
+                <div class="users-list" id="users-list"></div>
+            </div>
+
+            <button class="btn btn-logout" onclick="logoutAdmin()">خروج</button>
+        </div>
+    </div>
+
+    <script>
+        const BIN_ID = "6af38208ffd5d16053b7be3b";
+        const API_KEY = "$2a$10$hwehRSCL5qz8WnzrHvHiAup6Xqjpv15c1vwCl0QxHxyCNaq90TrO.";
+        const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+        const ADMIN_PASSWORD = "SONIC112211"; 
+
+        async function fetchDB() {
+            try {
+                const response = await fetch(`${API_URL}/latest`, { headers: { 'X-Master-Key': API_KEY } });
+                if (!response.ok) throw new Error("فشل الاتصال");
+                const data = await response.json();
+                return (data.record && typeof data.record === 'object') ? data.record : { users: {} };
+            } catch (e) {
+                showToast("⚠️ فشل الاتصال بالسحابة!");
+                return { users: {} };
+            }
+        }
+
+        async function saveDB(db) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+                    body: JSON.stringify(db)
+                });
+                if (!response.ok) throw new Error("فشل الحفظ");
+            } catch (e) {
+                showToast("⚠️ فشل الحفظ!");
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(-50%) translateY(20px)'; }, 3000);
+        }
+
+        window.loginAdmin = function() {
+            const pass = document.getElementById('admin-pass').value.trim();
+            if (pass !== ADMIN_PASSWORD) {
+                showToast("كلمة المرور خاطئة!");
+                return;
+            }
+            document.getElementById('admin-pass').value = "";
+            document.getElementById('login-panel').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+            renderUsers();
+        };
+
+        window.logoutAdmin = function() {
+            document.getElementById('admin-panel').style.display = 'none';
+            document.getElementById('login-panel').style.display = 'block';
+        };
+
+        window.createNewUser = async function() {
+            const user = document.getElementById('new-username').value.trim().replace(/\s+/g, '');
+            const pass = document.getElementById('new-userpass').value.trim().replace(/\s+/g, '');
+            const days = parseInt(document.getElementById('new-userdays').value);
+
+            if (!user || !pass) { showToast("أدخل الاسم وكلمة المرور!"); return; }
+            
+            const btn = document.querySelector('.btn');
+            btn.innerText = "جاري الحفظ...";
+            
+            const db = await fetchDB();
+            
+            if (db.users && db.users[user]) {
+                showToast("هذا الاسم موجود مسبقاً!");
+                btn.innerText = "إنشاء الحساب الآن";
+                return;
+            }
+
+            const now = Date.now();
+            const expiry = now + (days * 24 * 60 * 60 * 1000);
+
+            if (!db.users) db.users = {};
+            db.users[user] = { password: pass, expiryDate: expiry, activationDate: now };
+
+            await saveDB(db);
+            showToast(`تم إنشاء حساب (${user}) بنجاح!`);
+            
+            document.getElementById('new-username').value = "";
+            document.getElementById('new-userpass').value = "";
+            btn.innerText = "إنشاء الحساب الآن";
+            
+            renderUsers();
+        };
+
+        window.renderUsers = async function() {
+            const list = document.getElementById('users-list');
+            list.innerHTML = '<div style="text-align: center; color: var(--text-muted);">جاري التحميل...</div>';
+            
+            const db = await fetchDB();
+            list.innerHTML = '';
+
+            if (!db.users || Object.keys(db.users).length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: var(--text-muted);">لا يوجد أعضاء مسجلين بعد.</div>';
+                return;
+            }
+
+            Object.keys(db.users).forEach(username => {
+                const user = db.users[username];
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                
+                let expiryText = "غير مفعل";
+                let isExpired = false;
+                if (user.expiryDate) {
+                    const d = new Date(user.expiryDate);
+                    expiryText = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                    if (Date.now() >= user.expiryDate) {
+                        expiryText += " (منتهي)";
+                        isExpired = true;
+                    }
+                }
+
+                div.innerHTML = `
+                    <div class="user-info">
+                        <span class="username">${username}</span>
+                        <span class="user-pass">Pass: ${user.password}</span>
+                    </div>
+                    <div class="user-expiry" style="color: ${isExpired ? 'var(--danger)' : 'var(--text-muted)'}">ينتهي في: ${expiryText}</div>
+                    <div class="actions">
+                        <button class="btn-add" onclick="addDaysToUser('${username}', 1)">+1 يوم</button>
+                        <button class="btn-add" onclick="addDaysToUser('${username}', 30)">+30 يوم</button>
+                        <button class="btn-remove" onclick="removeUser('${username}')">حذف</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        };
+
+        window.addDaysToUser = async function(username, days) {
+            const db = await fetch
